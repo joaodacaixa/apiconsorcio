@@ -1,0 +1,6 @@
+@apiconsorcio_HostAddress = http://localhost:5157
+
+GET {{apiconsorcio_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
