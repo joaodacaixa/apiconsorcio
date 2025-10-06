@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using apiconsorcio.Data;
 using apiconsorcio.Models;
+
+
 namespace apiconsorcio.Data
 {
     public class DataContext : DbContext
