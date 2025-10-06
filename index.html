@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>Painel de Campanhas & Funcionários</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; color: #333; }
+.container { max-width: 1000px; margin: 0 auto; }
+.card { background: #fff; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.card h2 { margin-top: 0; }
+input, button { padding: 8px; margin: 4px 0; width: 100%; }
+button { cursor: pointer; }
+.table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.table th, .table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+nav { margin-bottom: 20px; }
+nav button { width: auto; margin-right: 10px; padding: 10px 20px; }
+.error { color: red; }
+</style>
+</head>
+<body>
+<div class="container">
+ <!-- Seção de consultas (GET) -->
+  <div id="consultas">
+    <div class="card">
+      <h2>Progresso da Campanha</h2>
+      <canvas id="graficoFuncionarios" width="800" height="400"></canvas>
+    </div>
+
+    <div class="card">
+      <h2>Campanha</h2>
+      <p>Valor atual: <span id="campanhaValor">0</span></p>
+      <p id="campanhaErro" class="error"></p> 
+    </div>
+
+    <div class="card">
+      <h2>Funcionários</h2>
+      <button id="btnRefreshFuncionarios">Atualizar Tabela</button>
+      <table class="table" id="tabelaFuncionarios">
+        <thead>
+          <tr><th>ID</th><th>Matrícula</th><th>Nome</th><th>Valor</th><th>Peso</th><th>Meta</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p id="tabelaErro" class="error"></p>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const API_BASE = 'https://meu-appconsorcio-bnh3ftgydng4gqac.brazilsouth-01.azurewebsites.net';
+let campanhaAtual = 0;
+let graficoFuncionariosChart = null;
+
+// Inicializa a página
+window.addEventListener('DOMContentLoaded', () => {
+  getCampanha();
+  getFuncionarios();
+  renderGraficoFuncionarios();
+});
+
+// --- Funções GET ---
+async function getCampanha() {
+  try {
+    const res = await fetch(`${API_BASE}/api/Campanhas`);
+    if (!res.ok) throw new Error(`Status: ${res.status}`);
+    const data = await res.json();
+    campanhaAtual = data.value?.[0]?.vrcampanha ?? 0;
+    document.getElementById('campanhaValor').textContent = campanhaAtual;
+  } catch (err) {
+    document.getElementById('campanhaErro').textContent = 'Erro ao buscar campanha: ' + err.message;
+  }
+}
+
+async function getFuncionarios() {
+  try {
+    const res = await fetch(`${API_BASE}/api/Dados`);
+    if (!res.ok) throw new Error(`Status: ${res.status}`);
+    const data = await res.json();
+    const tbody = document.querySelector('#tabelaFuncionarios tbody');
+    tbody.innerHTML = '';
+    if (Array.isArray(data.value)) {
+      data.value.forEach(f => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${f.id}</td><td>${f.matricula}</td><td>${f.nome}</td><td>${f.valor}</td><td>${f.peso}</td><td>${f.meta}</td>`;
+        tbody.appendChild(tr);
+      });
+    }
+  } catch (err) {
+    document.getElementById('tabelaErro').textContent = 'Erro ao buscar funcionários: ' + err.message;
+  }
+}
+
+async function renderGraficoFuncionarios() {
+  try {
+    const res = await fetch(`${API_BASE}/api/Dados`);
+    if (!res.ok) throw new Error(`Status: ${res.status}`);
+    const data = await res.json();
+
+    const labels = ["Campanha", ...data.value.map(f => f.nome)];
+    const metas = [campanhaAtual, ...data.value.map(f => f.meta)];
+    const realizados = [data.value.reduce((a,f)=>a+(f.valor||0),0), ...data.value.map(f => f.valor)];
+
+    const ctx = document.getElementById('graficoFuncionarios').getContext('2d');
+    if (graficoFuncionariosChart) {
+      graficoFuncionariosChart.data.labels = labels;
+      graficoFuncionariosChart.data.datasets[0].data = metas;
+      graficoFuncionariosChart.data.datasets[1].data = realizados;
+      graficoFuncionariosChart.update();
+    } else {
+      graficoFuncionariosChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Meta', data: metas, backgroundColor: 'rgba(0,0,255,1)' },
+            { label: 'Realizado', data: realizados, backgroundColor: 'rgba(250,117,4,1)' }
+          ]
+        },
+        options: { responsive:true, plugins:{legend:{position:'top'}, title:{display:true,text:'Meta x Realizado'}, tooltip:{mode:'index',intersect:false}}, scales:{y:{beginAtZero:true}, x:{stacked:false}} }
+      });
+    }
+  } catch (err) {
+    console.error("Erro ao renderizar gráfico:", err.message);
+  }
+}
+
+
+
+</script>
+</body>
+</html>

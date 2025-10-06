@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>Painel de Campanhas & Funcionários</title>
+<style>
+body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; color: #333; }
+.container { max-width: 1000px; margin: 0 auto; }
+.card { background: #fff; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.card h2 { margin-top: 0; }
+input, button { padding: 8px; margin: 4px 0; width: 100%; }
+button { cursor: pointer; }
+.table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.table th, .table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+nav { margin-bottom: 20px; }
+nav button { width: auto; margin-right: 10px; padding: 10px 20px; }
+.error { color: red; }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Seção de atualizações (POST) -->
+  <div id="atualizacao">
+    <div class="card">
+      <h2>Atualizar Campanha</h2>
+      <input type="number" id="campanhaInput" placeholder="Novo valor">
+      <button id="atualizaCampanha">Atualizar Campanha</button>
+      <p id="campanhaErroPost" class="error"></p>
+    </div>
+
+    <div class="card">
+      <h2>Incluir Funcionário</h2>
+      <input type="text" id="funcMatricula" placeholder="Matrícula">
+      <input type="text" id="funcNome" placeholder="Nome">
+      <input type="number" id="funcValor" placeholder="Valor">
+      <input type="number" id="funcPeso" placeholder="Peso">
+      <input type="number" id="funcMeta" placeholder="Meta">
+      <button id="incluiFuncionario">Incluir Funcionário</button>
+      <p id="funcErroPost" class="error"></p>
+    </div>
+
+    <div class="card">
+      <h2>Adicionar Valor ao Funcionário</h2>
+      <input type="text" id="funcMatAdd" placeholder="Matrícula do Funcionário">
+      <input type="number" id="funcValorAdd" placeholder="Valor a adicionar">
+      <button id="adicionaValorFuncionario">Adicionar Valor</button>
+      <p id="addValorErroPost" class="error"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+
+const API_BASE = 'https://meu-appconsorcio-bnh3ftgydng4gqac.brazilsouth-01.azurewebsites.net';
+
+// --- Funções POST ---
+document.getElementById('atualizaCampanha').addEventListener('click', async ()=>{
+  const valor = document.getElementById('campanhaInput').value;
+  const erroEl = document.getElementById('campanhaErroPost');
+  erroEl.textContent = '';
+  try {
+    const res = await fetch(`${API_BASE}/api/Campanhas/Atualiza_campanha?valor=${valor}`, { method: 'POST' });
+    if (!res.ok) throw new Error(`Status: ${res.status}`);
+
+  } catch(err) {
+    erroEl.textContent = 'Erro ao atualizar campanha: ' + err.message;
+  }
+  document.getElementById('campanhaInput').value='';
+});
+
+document.getElementById('incluiFuncionario').addEventListener('click', async ()=>{
+  const matricula = document.getElementById('funcMatricula').value;
+  const nome = document.getElementById('funcNome').value;
+  const valor = document.getElementById('funcValor').value;
+  const peso = document.getElementById('funcPeso').value;
+  const meta = document.getElementById('funcMeta').value;
+  const erroEl = document.getElementById('funcErroPost');
+  erroEl.textContent = '';
+  try {
+    await fetch(`${API_BASE}/api/Dados?matricula=${matricula}&nome=${nome}&valor=${valor}&peso=${peso}&meta=${meta}`, { method: 'POST' });
+
+  } catch(err) {
+    erroEl.textContent = 'Erro ao incluir funcionário: ' + err.message;
+  }
+  document.getElementById('funcMatricula').value='';
+  document.getElementById('funcNome').value='';
+  document.getElementById('funcValor').value='';
+  document.getElementById('funcPeso').value='';
+  document.getElementById('funcMeta').value='';
+});
+
+document.getElementById('adicionaValorFuncionario').addEventListener('click', async ()=>{
+  const matricula = document.getElementById('funcMatAdd').value;
+  const valor = document.getElementById('funcValorAdd').value;
+  const erroEl = document.getElementById('addValorErroPost');
+  erroEl.textContent = '';
+  try {
+    await fetch(`${API_BASE}/api/Dados/adicionaValor-valor?matricula=${matricula}&valor=${valor}`, { method: 'POST' });
+
+  } catch(err) {
+    erroEl.textContent = 'Erro ao adicionar valor: ' + err.message;
+  }
+  document.getElementById('funcMatAdd').value='';
+  document.getElementById('funcValorAdd').value='';
+});
+</script>
